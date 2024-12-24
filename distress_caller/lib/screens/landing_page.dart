@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -119,6 +120,36 @@ class LandingPage extends StatelessWidget {
     );
   }
 
+  Future<Position> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled, don't continue
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, don't continue
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can continue accessing the position of the device.
+    return await Geolocator.getCurrentPosition();
+  }
+
   Future<String?> _sendDistressCall(BuildContext context, String distressType) async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('name');
@@ -127,33 +158,37 @@ class LandingPage extends StatelessWidget {
     final age = prefs.getString('age');
     final gender = prefs.getString('gender');
     final bloodType = prefs.getString('bloodType');
+    final emergencyContact = prefs.getString('emergencyContact');
     final medicalHistory = prefs.getString('medicalHistory');
 
     final userInfo = {
-      "profile_photo": "",
+      "profilePhoto": "",
       "name": name,
       "phone": phone,
-      "additional_data": {
+      "additionalData": {
         "email": email,
         "age": age,
         "gender": gender,
-        "blood_type": bloodType,
-        "emergency_contacts": [
-          {"name": "Jane Doe", "phone": "+0987654321"}
-        ],
-        "medical_history": medicalHistory,
+        "bloodType": bloodType,
+        "emergencyContact": emergencyContact,
+        "medicalHistory": medicalHistory,
       }
     };
 
+    Position position = await _getCurrentLocation();
+    debugPrint('Location: ${position.latitude}, ${position.longitude}');
+
     final distressData = {
-      "location": {"latitude": 0.0, "longitude": 0.0}, // Replace with actual location data
-      "type": "Medical Emergency"
+      "location": {
+        "type": "Point",
+        "coordinates": [position.latitude, position.longitude]
+      },
+      "distressType": distressType
     };
 
     final body = jsonEncode({
-      "user_info": userInfo,
-      "distress_data": distressData,
-      "distress_type": distressType
+      "userInfo": userInfo,
+      ...distressData
     });
 
     final response = await http.post(
