@@ -15,6 +15,7 @@ class ProfilePageState extends State<ProfilePage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _medicalHistoryController = TextEditingController();
+  final TextEditingController _emergencyContactController = TextEditingController(); // Add this controller
 
   String _gender = 'Male';
   String _bloodType = 'A+';
@@ -33,6 +34,7 @@ class ProfilePageState extends State<ProfilePage> {
     _emailController.dispose();
     _ageController.dispose();
     _medicalHistoryController.dispose();
+    _emergencyContactController.dispose(); // Dispose this controller
     super.dispose();
   }
 
@@ -45,6 +47,7 @@ class ProfilePageState extends State<ProfilePage> {
       _emailController.text = prefs.getString('email') ?? '';
       _ageController.text = prefs.getString('age') ?? '';
       _medicalHistoryController.text = prefs.getString('medicalHistory') ?? '';
+      _emergencyContactController.text = prefs.getString('emergencyContact') ?? ''; // Load this field
       _gender = prefs.getString('gender') ?? 'Male';
       _bloodType = prefs.getString('bloodType') ?? 'A+';
       _profilePhoto = prefs.getString('profilePhoto') ?? '';
@@ -59,6 +62,7 @@ class ProfilePageState extends State<ProfilePage> {
     await prefs.setString('email', _emailController.text);
     await prefs.setString('age', _ageController.text);
     await prefs.setString('medicalHistory', _medicalHistoryController.text);
+    await prefs.setString('emergencyContact', _emergencyContactController.text); // Save this field
     await prefs.setString('gender', _gender);
     await prefs.setString('bloodType', _bloodType);
     await prefs.setString('profilePhoto', _profilePhoto);
@@ -191,6 +195,17 @@ class ProfilePageState extends State<ProfilePage> {
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 3,
+              ),
+              SizedBox(height: 16),
+
+              // Emergency Contact Field
+              TextField(
+                controller: _emergencyContactController,
+                decoration: InputDecoration(
+                  labelText: 'Emergency Contact',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
               ),
               SizedBox(height: 32),
 
