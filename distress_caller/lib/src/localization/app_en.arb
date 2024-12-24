@@ -1,0 +1,6 @@
+{
+  "appTitle": "distress_caller",
+  "@appTitle": {
+    "description": "The title of the application"
+  }
+}
