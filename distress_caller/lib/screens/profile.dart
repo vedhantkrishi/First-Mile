@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart'; // Add this import
+import 'dart:io'; // Add this import
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -76,6 +78,18 @@ class ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  // Pick an image from the gallery
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _profilePhoto = pickedFile.path;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,14 +104,17 @@ class ProfilePageState extends State<ProfilePage> {
             children: [
               // Profile Photo
               Center(
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundImage: _profilePhoto.isNotEmpty
-                      ? NetworkImage(_profilePhoto)
-                      : null,
-                  child: _profilePhoto.isEmpty
-                      ? Icon(Icons.person, size: 50)
-                      : null,
+                child: GestureDetector(
+                  onTap: _pickImage, // Add this line
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundImage: _profilePhoto.isNotEmpty
+                        ? FileImage(File(_profilePhoto))
+                        : null,
+                    child: _profilePhoto.isEmpty
+                        ? Icon(Icons.person, size: 50)
+                        : null,
+                  ),
                 ),
               ),
               SizedBox(height: 16),
