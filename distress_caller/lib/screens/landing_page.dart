@@ -48,33 +48,37 @@ class LandingPage extends StatelessWidget {
                   Text(
                     'Issuing an alert will notify all first responders in your vicinity.',
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(right: 8.0),
-                        child: Text(
-                          'For Me',
-                          style: TextStyle(fontSize: 16.0),
+                  Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(right: 8.0),
+                          child: Text(
+                            'For Me',
+                            style: TextStyle(fontSize: 16.0),
+                          ),
                         ),
-                      ),
-                      Switch(
-                        value: distressType == 'For Someone Else',
-                        onChanged: (value) {
-                          setState(() {
-                            distressType = value ? 'For Someone Else' : 'For Me';
-                          });
-                        },
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(left: 8.0),
-                        child: Text(
-                          'For Someone Else',
-                          style: TextStyle(fontSize: 16.0),
+                        Switch(
+                          value: distressType == 'For Someone Else',
+                          onChanged: (value) {
+                            setState(() {
+                              distressType = value ? 'For Someone Else' : 'For Me';
+                            });
+                          },
                         ),
-                      ),
-                    ],
+                        Padding(
+                          padding: EdgeInsets.only(left: 8.0),
+                          child: Text(
+                            'For Someone Else',
+                            style: TextStyle(fontSize: 16.0),
+                          ),
+                        ),
+                      ],
+                    )
                   ),
+
                   Row(
                     children: [
                       Checkbox(
@@ -97,10 +101,10 @@ class LandingPage extends StatelessWidget {
                 TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
                 TextButton(
                   onPressed: () async {
-                    final success = await _sendDistressCall(context, distressType);
-                    if (success) {
+                    final distressId = await _sendDistressCall(context, distressType);
+                    if (distressId != null) {
                       Navigator.pop(context);
-                      Navigator.pushNamed(context, '/distress');
+                      Navigator.pushNamed(context, '/distress', arguments: distressId);
                     } else {
                       Navigator.pop(context);
                     }
@@ -115,7 +119,7 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  Future<bool> _sendDistressCall(BuildContext context, String distressType) async {
+  Future<String?> _sendDistressCall(BuildContext context, String distressType) async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('name');
     final phone = prefs.getString('phone');
@@ -163,6 +167,8 @@ class LandingPage extends StatelessWidget {
         SnackBar(content: Text('Distress call sent successfully!')),
       );
 
+      final distressId = jsonDecode(response.body)['id'];
+
       // Encode profile photo as Base64 and patch the initial request
       final profilePhoto = prefs.getString('profilePhoto');
       if (profilePhoto != null) {
@@ -174,17 +180,18 @@ class LandingPage extends StatelessWidget {
         });
 
         await http.patch(
-          Uri.parse('https://example.com/api/distress/${jsonDecode(response.body)['id']}'),
+          Uri.parse('https://example.com/api/distress/$distressId'),
           headers: {'Content-Type': 'application/json'},
           body: patchBody,
         );
       }
-      return true;
+      return distressId;
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to send distress call.')),
       );
-      return false;
+      // return null;
+      return '0';
     }
   }
 }
